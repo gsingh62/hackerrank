@@ -11,27 +11,25 @@ public class Solution {
     public static class Node {
         int label;
         int distance;
-        List<Edge> neighbours;
-        
+        Map<Node, Edge> neighbours;
+
         public Node(int label) {
             this.label = label;
             distance = Integer.MAX_VALUE;
-            neighbours = new ArrayList<>();
+            neighbours = new IdentityHashMap<>();
         }
-        
+
         public void addNeighbour(Edge e) {
-            for (Edge o: neighbours) {
-                if (o.neighbourNode.label == e.neighbourNode.label) {
-                    if (e.weight < o.weight) {
-                        o.weight = e.weight;
-                    }
-                    return;
+            Edge o = neighbours.get(e.neighbourNode);
+            if (o != null) {
+                if (e.weight < o.weight) {
+                    o.weight = e.weight;
                 }
+                return;
             }
-            
-            this.neighbours.add(e);
+
+            this.neighbours.put(e.neighbourNode, e);
         }
-        
     }
     
     public static class Edge {
@@ -89,15 +87,16 @@ public class Solution {
             if (can.n.distance == Integer.MAX_VALUE) {
                 can.n.distance = can.distance;
                 dist[can.n.label] = can.n.distance;
+
+                for (Edge edge: can.n.neighbours.values()) {
+                    int alt = can.n.distance + edge.weight;
+                    if (edge.neighbourNode.distance == Integer.MAX_VALUE) {
+                        Candidate neighbourCan = new Candidate(edge.neighbourNode, alt);
+                        pq.offer(neighbourCan);
+                    }
+                }
             }        
             
-            for (Edge edge: can.n.neighbours) {
-                int alt = can.n.distance + edge.weight;
-                if (edge.neighbourNode.distance == Integer.MAX_VALUE) {
-                    Candidate neighbourCan = new Candidate(edge.neighbourNode, alt);
-                    pq.offer(neighbourCan);
-                }
-            }
         }
         return dist;
     }
@@ -165,4 +164,3 @@ public class Solution {
         stdin.close();
     }
 }
-
