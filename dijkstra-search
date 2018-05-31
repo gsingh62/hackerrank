@@ -1,0 +1,168 @@
+import java.io.*;
+import java.math.*;
+import java.security.*;
+import java.text.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.regex.*;
+
+public class Solution {
+
+    public static class Node {
+        int label;
+        int distance;
+        List<Edge> neighbours;
+        
+        public Node(int label) {
+            this.label = label;
+            distance = Integer.MAX_VALUE;
+            neighbours = new ArrayList<>();
+        }
+        
+        public void addNeighbour(Edge e) {
+            for (Edge o: neighbours) {
+                if (o.neighbourNode.label == e.neighbourNode.label) {
+                    if (e.weight < o.weight) {
+                        o.weight = e.weight;
+                    }
+                    return;
+                }
+            }
+            
+            this.neighbours.add(e);
+        }
+        
+    }
+    
+    public static class Edge {
+        Node neighbourNode;
+        int weight;
+        
+        public Edge(Node neighbourNode, int weight) {
+            this.neighbourNode = neighbourNode;
+            this.weight = weight;
+        }
+    }
+    
+    public static class Candidate implements Comparable<Candidate>{
+        Node n;
+        int distance;
+        
+        public Candidate(Node n, int distance) {
+            this.n = n;
+            this.distance = distance;
+        }
+        
+        @Override
+        public int compareTo(Candidate c) {
+            return Integer.compare(this.distance, c.distance);
+        }
+        
+    }
+
+    // Complete the shortestReach function below.
+    static int[] shortestReach(int n, int[][] edges, int s) {
+        int[] dist = new int[n+1];
+        Node[] nodes = new Node[n+1];
+        Queue<Candidate> pq = new PriorityQueue<>();
+        
+        for (int i = 0; i < edges.length; i++) {
+            int src = edges[i][0];
+            int dst = edges[i][1];
+            int wgt = edges[i][2];
+            
+            if (nodes[src] == null) {
+                nodes[src] = new Node(src);
+            }           
+            if (nodes[dst] == null) {
+                nodes[dst] = new Node(dst);
+            }
+            
+            nodes[src].addNeighbour(new Edge(nodes[dst], wgt));
+            nodes[dst].addNeighbour(new Edge(nodes[src], wgt));            
+        }
+        
+        pq.add(new Candidate(nodes[s], 0));
+        while(!pq.isEmpty()) {
+            Candidate can = pq.poll();
+ 
+            if (can.n.distance == Integer.MAX_VALUE) {
+                can.n.distance = can.distance;
+                dist[can.n.label] = can.n.distance;
+            }        
+            
+            for (Edge edge: can.n.neighbours) {
+                int alt = can.n.distance + edge.weight;
+                if (edge.neighbourNode.distance == Integer.MAX_VALUE) {
+                    Candidate neighbourCan = new Candidate(edge.neighbourNode, alt);
+                    pq.offer(neighbourCan);
+                }
+            }
+        }
+        return dist;
+    }
+
+    private static void readEdgeString(String s, int[] out) {
+        int wi=0, cur=0;;
+        for(int i=0; i<s.length(); i++) {
+            final char c = s.charAt(i);
+            
+            if(c == ' ') {
+                out[wi++] = cur;
+                cur=0;
+            } else {
+                cur = cur*10 + c-'0';
+            }
+        }
+        out[wi] = cur;
+    }
+
+    public static void main(String[] args) throws IOException {
+        final BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+        final BufferedWriter stdout = new BufferedWriter(new FileWriter(System.getenv("OUTPUT_PATH")));
+        
+        final Pattern splitby = Pattern.compile(" ");
+        String[] line;
+        
+        final int T = Integer.valueOf(stdin.readLine());
+        for (int t=0; t<T; t++) {
+            line = splitby.split(stdin.readLine());
+            final int N = Integer.valueOf(line[0]);
+            final int M = Integer.valueOf(line[1]);
+            
+            final int[][] EDGES = new int[M][3];
+            final int[] edgeline = new int[3];
+            for(int m=0; m<M; m++) {
+                readEdgeString(stdin.readLine(), edgeline);
+
+                EDGES[m][0] = edgeline[0];
+                EDGES[m][1] = edgeline[1];
+                EDGES[m][2] = edgeline[2];
+            }
+            
+            final int S = Integer.valueOf(stdin.readLine());
+            
+            final int[] result = shortestReach(N, EDGES, S);
+            for (int i = 1; i < result.length; i++) {
+                if (result[i] == 0) {
+                    if (i != S) {
+                        stdout.write(String.valueOf(-1));
+                        if (i != result.length - 1) {
+                            stdout.write(" ");
+                        }
+                    }
+                } else {
+                    stdout.write(String.valueOf(result[i]));
+                    if (i != result.length - 1) {
+                        stdout.write(" ");
+                    }
+                }
+            }
+            stdout.newLine();
+        }
+        
+        stdout.close();
+        stdin.close();
+    }
+}
+
